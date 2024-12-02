@@ -19,16 +19,16 @@ console.log('Hiddify API key:', process.env.HIDDIFY_API_KEY ? '✓ Key set' : '�
 
 // Keyboards
 const mainMenuKeyboard = Markup.keyboard([
-    ['Подключиться'],
-    ['Мои активные ключи'],
-    ['Помощь']
+    ['🛒 Подключиться'],
+    ['🔑 Мои ключи'],
+    ['❓ Помощь']
 ]).resize();
 
 const selectTariffKeyboard = Markup.keyboard([
-    ['Тариф 1 месяц'],
-    ['Тариф 3 месяца'],
-    ['Тариф 6 месяцев'],
-    ['Главное меню'],
+    ['💫 Тариф 1 месяц'],
+    ['⭐️ Тариф 3 месяца'],
+    ['🌟 Тариф 6 месяцев'],
+    ['🏠 Главное меню'],
 ]).resize();
 
 const helpMenuKeyboard = Markup.keyboard([
@@ -39,9 +39,13 @@ const helpMenuKeyboard = Markup.keyboard([
 ]).resize();
 
 const deviceSelectionKeyboard = Markup.keyboard([
-    ['📱 Android', '📱 IOS', '💻 Windows'],
+    ['📱 Android', '📱 iOS', '💻 Windows'],
     ['💻 MacOS', '📺 AndroidTV', '📺 AppleTV'],
     ['⬅️ Назад', '🏠 Главное меню']
+]).resize();
+
+const cancelPaymentKeyboard = Markup.keyboard([
+    ['❌ Отменить оплату']
 ]).resize();
 
 // Middleware
@@ -53,10 +57,9 @@ bot.command('start', async (ctx) => {
     await ctx.reply(
         '🌟 Добро пожаловать в VPN Bot!\n\n' +
         '🔐 Здесь вы можете:\n' +
-        '• Подключиться\n' +
-        '• Управлять своими ключами\n' +
-        '• Получить инструкции по подключению\n' +
-        '• Задать вопросы поддержке\n\n' +
+        '• 🛒 Подключиться к VPN\n' +
+        '• 🔑 Управлять своими ключами\n' +
+        '• ❓ Получить помощь\n\n' +
         '🚀 Выберите действие в меню ниже:',
         mainMenuKeyboard
     );
@@ -101,18 +104,18 @@ bot.on("successful_payment", async (ctx) => {
 });
 
 // Menu handlers
-bot.hears('Подключиться', (ctx) => {
+bot.hears('🛒 Подключиться', (ctx) => {
     console.log('Connect request from user:', ctx.from.id);
     ctx.reply('Выберите тариф:', selectTariffKeyboard);
 });
 
-bot.hears('Мои активные ключи', async (ctx) => {
+bot.hears('🔑 Мои ключи', async (ctx) => {
     console.log('User keys requested by:', ctx.from.id);
     try {
         const keys = await getUserKeys(ctx.from.id);
         
         if (keys.length === 0) {
-            await ctx.reply('У вас пока нет активных ключей. Нажмите "Подключиться" чтобы приобрести VPN.');
+            await ctx.reply('У вас пока нет активных ключей. Нажмите "🛒 Подключиться" чтобы приобрести VPN.');
             return;
         }
 
@@ -132,20 +135,17 @@ bot.hears('Мои активные ключи', async (ctx) => {
     }
 });
 
-bot.hears('Отменить оплату', async (ctx) => {
-    console.log('Payment cancelled by user:', ctx.from.id);
-    await ctx.reply('Оплата отменена', selectTariffKeyboard);
+bot.hears('❓ Помощь', async (ctx) => {
+    await ctx.reply('Выберите раздел помощи:', helpMenuKeyboard);
 });
 
-bot.hears('Тариф 1 месяц', async (ctx) => {
+const userInvoiceMessages = new Map();
+
+bot.hears('💫 Тариф 1 месяц', async (ctx) => {
     console.log('1 month tariff selected by user:', ctx.from.id);
-    const keyboard = Markup.keyboard([
-        ['Отменить оплату'],
-    ]).resize();
+    await ctx.reply('Инвойс для оплаты:', cancelPaymentKeyboard);
 
-    await ctx.reply('Инвойс для оплаты', keyboard);
-
-    await ctx.replyWithInvoice({
+    const invoiceMessage = await ctx.replyWithInvoice({
         currency: "XTR",
         prices: [{label: "VPN на месяц", amount: 1}],
         title: "Быстрый и надежный VPN",
@@ -153,15 +153,40 @@ bot.hears('Тариф 1 месяц', async (ctx) => {
         description: "Свободный доступ в интернет на месяц",
         payload: 'Тариф 1 месяц',
     });
+    
+    userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
-bot.hears('Главное меню', async ctx => {
-    console.log('Main menu requested by user:', ctx.from.id);
-    await ctx.reply('Возврат в главное меню', mainMenuKeyboard);
+bot.hears('⭐️ Тариф 3 месяца', async (ctx) => {
+    console.log('3 month tariff selected by user:', ctx.from.id);
+    await ctx.reply('Инвойс для оплаты:', cancelPaymentKeyboard);
+
+    const invoiceMessage = await ctx.replyWithInvoice({
+        currency: "XTR",
+        prices: [{label: "VPN на 3 месяца", amount: 3}],
+        title: "Быстрый и надежный VPN",
+        provider_token: process.env.PROVIDER_TOKEN || "",
+        description: "Свободный доступ в интернет на 3 месяца",
+        payload: 'Тариф 3 месяца',
+    });
+    
+    userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
-bot.hears('Помощь', async (ctx) => {
-    await ctx.reply('Выберите раздел помощи:', helpMenuKeyboard);
+bot.hears('🌟 Тариф 6 месяцев', async (ctx) => {
+    console.log('6 month tariff selected by user:', ctx.from.id);
+    await ctx.reply('Инвойс для оплаты:', cancelPaymentKeyboard);
+
+    const invoiceMessage = await ctx.replyWithInvoice({
+        currency: "XTR",
+        prices: [{label: "VPN на 6 месяцев", amount: 6}],
+        title: "Быстрый и надежный VPN",
+        provider_token: process.env.PROVIDER_TOKEN || "",
+        description: "Свободный доступ в интернет на 6 месяцев",
+        payload: 'Тариф 6 месяцев',
+    });
+    
+    userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
 bot.hears('🏠 Главное меню', async ctx => {
@@ -181,9 +206,9 @@ bot.hears('❌ Не работает VPN', async (ctx) => {
     await ctx.reply(
         `${userName}, я всегда рады помочь тебе!\n` +
         'Если не получается подключиться:\n\n' +
-        '1. Убедись, что у тебя есть действующий ключ. Для этого перейди в 🔑Мои активные ключи.\n\n' +
-        '2. Если ключ есть — убедись, что он подключен. В 🔑Мои активные ключи выбери активный ключ, а затем выбери устройство и следуй инструкции. Если не получается настроить — не бойся писать в поддержку.\n\n' +
-        '3. Если не прошла оплата — сначала проверь, не появился ли ключ в 🔑Мои активные ключи. Если деньги списались, а ключ не появился — напиши в поддержку.\n\n' +
+        '1. Убедись, что у тебя есть действующий ключ. Для этого перейди в 🔑Мои ключи.\n\n' +
+        '2. Если ключ есть — убедись, что он подключен. В 🔑Мои ключи выбери активный ключ, а затем выбери устройство и следуй инструкции. Если не получается настроить — не бойся писать в поддержку.\n\n' +
+        '3. Если не прошла оплата — сначала проверь, не появился ли ключ в 🔑Мои ключи. Если деньги списались, а ключ не появился — напиши в поддержку.\n\n' +
         'Не помогло? Пиши @support_username.\n' +
         'С удовольствием поможем разобраться🐥',
         helpMenuKeyboard
@@ -210,17 +235,14 @@ bot.hears('📱 Android', async (ctx) => {
     );
 });
 
-bot.hears('🍎 IOS', async (ctx) => {
+bot.hears('📱 iOS', async (ctx) => {
     await ctx.reply(
-        'Инструкция для IOS:\n\n' +
+        'Инструкция для iOS:\n\n' +
         '1️⃣ Нажми на ключ доступа, чтобы скопировать его.\n\n' +
-        '2️⃣ Установи приложение Streisand (https://apps.apple.com/ru/app/streisand/id6450534064).\n\n' +
-        '3️⃣ Запусти программу Streisand и нажми ➕ в правом верхнем углу.\n\n' +
-        '4️⃣ Выбери Добавить из буфера.\n\n' +
-        '5️⃣ Нажми круглую кнопку для подключения.\n\n' +
-        '🆕 Также ты можешь настроить 🔥Автоматическое Вкл/Выкл VPN при входе в Instagram:\n' +
-        '👉 ВИДЕО: НАСТРОЙКА АВТОМАТИЗАЦИИ 👈\n' +
-        'https://www.youtube.com/watch?v=EC0wygiryLI',
+        '2️⃣ Установи приложение Streisand из App Store.\n\n' +
+        '3️⃣ Запусти Streisand и нажми + в правом верхнем углу.\n\n' +
+        '4️⃣ Выбери импорт из буфера обмена.\n\n' +
+        '5️⃣ Нажми Start для подключения.',
         deviceSelectionKeyboard
     );
 });
@@ -238,14 +260,14 @@ bot.hears('💻 Windows', async (ctx) => {
     );
 });
 
-bot.hears('🖥 MacOS', async (ctx) => {
+bot.hears('💻 MacOS', async (ctx) => {
     await ctx.reply(
         'Инструкция для MacOS:\n\n' +
         '1️⃣ Нажми на ключ доступа, чтобы скопировать его.\n\n' +
-        '2️⃣ Скачай и установи приложение V2Box (https://apps.apple.com/ru/app/v2box-v2ray-client/id6446814690).\n\n' +
-        '3️⃣ Запусти программу V2Box и перейди на вкладку Configs (снизу).\n\n' +
-        '4️⃣ Нажми ➕ в правом верхнем углу и выбери Import v2ray uri from clipboard.\n\n' +
-        '5️⃣ Перейди на вкладку Home (снизу) и нажми большую кнопку Tap to Connect.',
+        '2️⃣ Установи приложение V2Box из App Store.\n\n' +
+        '3️⃣ Запусти V2Box и нажми + в правом верхнем углу.\n\n' +
+        '4️⃣ Выбери импорт из буфера обмена.\n\n' +
+        '5️⃣ Нажми кнопку подключения.',
         deviceSelectionKeyboard
     );
 });
@@ -285,6 +307,22 @@ bot.hears('📺 AppleTV', async (ctx) => {
 
 bot.hears('⬅️ Назад', async (ctx) => {
     await ctx.reply('Выберите раздел помощи:', helpMenuKeyboard);
+});
+
+bot.hears('❌ Отменить оплату', async (ctx) => {
+    console.log('Payment cancelled by user:', ctx.from.id);
+    
+    const invoiceMessageId = userInvoiceMessages.get(ctx.from.id);
+    if (invoiceMessageId) {
+        try {
+            await ctx.deleteMessage(invoiceMessageId);
+        } catch (error) {
+            console.error('Error deleting invoice message:', error);
+        }
+        userInvoiceMessages.delete(ctx.from.id);
+    }
+
+    await ctx.reply('🔄 Выберите другой тариф:', selectTariffKeyboard);
 });
 
 // Error handling
