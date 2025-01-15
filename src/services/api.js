@@ -6,7 +6,8 @@ const userBaseUrl = process.env.USER_BASE_URL || 'https://147.45.60.54.sslip.io/
 
 const calculateExpiryDate = (months = 1) => {
     const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + months);
+    // Добавляем точно 30 дней за каждый месяц
+    expiryDate.setDate(expiryDate.getDate() + (months * 30));
     return expiryDate;
 };
 
