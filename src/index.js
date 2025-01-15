@@ -1,14 +1,8 @@
 import { Telegraf, session, Markup } from 'telegraf';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import { createUser, getUserKeys } from './services/api.js';
 
 dotenv.config();
-
-// Подключение к MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✓ Connected to MongoDB'))
-    .catch(err => console.error('✗ MongoDB connection error:', err));
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 

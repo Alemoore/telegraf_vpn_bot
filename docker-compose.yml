@@ -9,18 +9,8 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/vpn_bot
-    depends_on:
-      - mongodb
-
-  mongodb:
-    image: mongo:latest
-    container_name: vpn_mongodb
-    restart: always
     volumes:
-      - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
+      - db_data:/app/data
 
 volumes:
-  mongodb_data:
+  db_data:
