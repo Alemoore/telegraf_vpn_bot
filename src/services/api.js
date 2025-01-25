@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 import db from './db.js';
 
 const adminUrl = process.env.ADMIN_API_URL || 'https://147.45.60.54.sslip.io/NwzLKcJBStlkuHSfXlmSjDsn9N/api/v2/admin/user/';
@@ -62,11 +62,10 @@ export async function createUser(user_telegram_id, months = 1) {
 export async function getUserKeys(telegramId) {
     try {
         // Фильтрация активных ключей
-        const keys = db.data.userKeys
+        // Сортировка по дате создания
+        return db.data.userKeys
             .filter(key => key.telegramId === telegramId.toString() && new Date(key.expiresAt) > new Date())
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Сортировка по дате создания
-
-        return keys;
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } catch (error) {
         console.error('Error getting user keys:', error);
         throw error;

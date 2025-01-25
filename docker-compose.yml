@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   bot:
-    image: vpn-bot.cr.cloud.ru/vpn-telegram-bot:latest
+    image: alemoore/vpn-telegram-bot:latest
     container_name: vpn_bot
     restart: always
     env_file:
