@@ -10,10 +10,28 @@ const calculateExpiryDate = (months = 1) => {
     return expiryDate;
 };
 
+export async function getUserInfo(token) {
+    try {
+        const getUserInfoOptions = {
+            method: 'GET',
+            headers: {
+                Accept: 'application/json',
+                'Hiddify-API-Key': token
+            }
+        };
+        const response = await fetch(userBaseUrl + 'api/v2/user/me/', getUserInfoOptions);
+        const data = await response.json();
+        console.log('getUserInfo response:', data);
+        return data;
+    } catch (error) {
+        console.error('Error in getUserInfo:', error);
+        throw error;
+    }
+}
+
 export async function createUser(user_telegram_id, months = 1) {
     try {
         const uuid = uuidv4();
-        const url = `${userBaseUrl}${uuid}`;
         const expiresAt = calculateExpiryDate(months);
 
         // Отправка запроса на сервер для создания пользователя
@@ -35,13 +53,16 @@ export async function createUser(user_telegram_id, months = 1) {
         const response = await fetch(adminUrl, createUserOptions);
         const data = await response.json();
         console.log('createUser response:', data);
+        const user_info = await getUserInfo(data.uuid)
+        const { profile_url } = user_info;
+        console.log('user info response:', user_info)
 
         if (data.uuid) {
             // Сохраняем ключ в базу данных
             db.data.userKeys.push({
                 telegramId: user_telegram_id.toString(),
                 uuid: data.uuid,
-                url: url,
+                url: profile_url,
                 expiresAt: expiresAt,
                 createdAt: new Date(),
             });
@@ -51,12 +72,11 @@ export async function createUser(user_telegram_id, months = 1) {
 
             return {
                 uuid: data.uuid,
-                url: url,
+                url: profile_url,
                 expiresAt: expiresAt
             };
         }
 
-        throw new Error('UUID not received from API');
     } catch (error) {
         console.error('Error in createUser:', error);
         throw error;
