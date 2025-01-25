@@ -1,7 +1,7 @@
-import { Telegraf, session } from 'telegraf';
+import {session, Telegraf} from 'telegraf';
 import dotenv from 'dotenv';
-import { createUser, getUserKeys } from './services/api.js';
-import { keyboards, messages, commands, buttons } from './constants.js';
+import {createUser, getUserKeys} from './services/api.js';
+import {buttons, commands, keyboards, messages} from './constants.js';
 
 dotenv.config();
 
@@ -24,7 +24,9 @@ bot.command(commands.start, async (ctx) => {
     );
 });
 
-bot.command(commands.help, (ctx) => ctx.reply('Чем могу помочь?'));
+bot.command(commands.help, async (ctx) => {
+    await ctx.reply(messages.contactSupport, keyboards.helpMenu)
+});
 
 // Payment handling
 bot.on("pre_checkout_query", async (ctx) => {
@@ -89,7 +91,7 @@ bot.hears(buttons.tariffs.month1, async (ctx) => {
         description: "Свободный доступ в интернет на месяц",
         payload: 'Тариф 1 месяц',
     });
-    
+
     userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
@@ -105,7 +107,7 @@ bot.hears(buttons.tariffs.month3, async (ctx) => {
         description: "Свободный доступ в интернет на 3 месяца",
         payload: 'Тариф 3 месяца',
     });
-    
+
     userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
@@ -121,14 +123,14 @@ bot.hears(buttons.tariffs.month6, async (ctx) => {
         description: "Свободный доступ в интернет на 6 месяцев",
         payload: 'Тариф 6 месяцев',
     });
-    
+
     userInvoiceMessages.set(ctx.from.id, invoiceMessage.message_id);
 });
 
 // Отмена оплаты
 bot.hears(buttons.cancelPayment, async (ctx) => {
     console.log('Payment cancelled by user:', ctx.from.id);
-    
+
     const invoiceMessageId = userInvoiceMessages.get(ctx.from.id);
     if (invoiceMessageId) {
         try {
