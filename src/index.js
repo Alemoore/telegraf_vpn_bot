@@ -2,6 +2,7 @@ import {session, Telegraf} from 'telegraf';
 import dotenv from 'dotenv';
 import {createUser, getUserKeys} from './services/api.js';
 import {buttons, commands, keyboards, messages} from './constants.js';
+import db from "./services/db.js";
 
 dotenv.config();
 
@@ -15,12 +16,13 @@ console.log('Hiddify API key:', process.env.HIDDIFY_API_KEY ? '✓ Key set' : '�
 // Middleware
 bot.use(session());
 
+
 // Basic commands
 bot.command(commands.start, async (ctx) => {
     console.log('Start command received from user:', ctx.from.id);
     await ctx.reply(
         messages.welcome(ctx.from.first_name),
-        keyboards.mainMenu
+        keyboards.mainMenu,
     );
 });
 
@@ -46,7 +48,7 @@ bot.on("successful_payment", async (ctx) => {
     const user_telegram_id = ctx.from.id;
     try {
         console.log('Creating user for telegram ID:', user_telegram_id);
-        const result = await createUser(user_telegram_id, 1); // 1 месяц
+        const result = await createUser(user_telegram_id, 1);
         console.log('User created:', result);
         await ctx.reply(messages.paymentSuccess(result), keyboards.mainMenu);
     } catch (error) {
@@ -55,10 +57,8 @@ bot.on("successful_payment", async (ctx) => {
     }
 });
 
-// Хранение инвойсов пользователей
 const userInvoiceMessages = new Map();
 
-// Button handlers
 bot.hears(buttons.myKeys, async (ctx) => {
     console.log('User keys requested by:', ctx.from.id);
     try {
@@ -73,6 +73,16 @@ bot.hears(buttons.myKeys, async (ctx) => {
         await ctx.reply('Произошла ошибка при получении ключей. Пожалуйста, попробуйте позже.');
     }
 });
+
+bot.hears(buttons.trial, async (ctx) => {
+    console.log('User tapped on trial', ctx.from.id)
+    if (db.data.userKeys.filter(key => key.telegramId === ctx.from.id.toString()).length === 0) {
+        const result = await createUser(ctx.from.id, 1);
+        await ctx.reply(messages.paymentSuccess(result));
+    } else {
+        await ctx.reply(messages.buyKeyOrInviteFriend);
+    }
+})
 
 bot.hears(buttons.connect, async (ctx) => {
     await ctx.reply('Выберите тариф:', keyboards.selectTariff);
@@ -181,11 +191,11 @@ bot.hears(buttons.devices.macos, async (ctx) => {
     await ctx.reply(messages.deviceInstructions.macos, keyboards.deviceSelection);
 });
 
-bot.hears(buttons.devices.androidtv, async (ctx) => {
+bot.hears(buttons.devices.android_tv, async (ctx) => {
     await ctx.reply(messages.deviceInstructions.androidtv, keyboards.deviceSelection);
 });
 
-bot.hears(buttons.devices.appletv, async (ctx) => {
+bot.hears(buttons.devices.apple_tv, async (ctx) => {
     await ctx.reply(messages.deviceInstructions.appletv, keyboards.deviceSelection);
 });
 
